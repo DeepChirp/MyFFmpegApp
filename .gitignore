@@ -1,0 +1,9 @@
+code_amount.ps1
+
+__pycache__/
+
+data/
+dist/
+build/
+
+docs/development.md
