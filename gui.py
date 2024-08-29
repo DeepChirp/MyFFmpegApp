@@ -463,9 +463,9 @@ def merge_audio_video(file_paths):
         # 显示进度条和进度标签
         progress_var = StringVar()
         progress_bar = ttk.Progressbar(progress_window, orient="horizontal", length=300, mode="determinate")
-        progress_bar.pack(pady=10)
+        progress_bar.grid(pady=10)
         progress_label = Label(progress_window, textvariable=progress_var)
-        progress_label.pack(pady=5)
+        progress_label.grid(pady=5)
 
         def merge_and_update():
             result = run_ffmpeg_command_with_progress(command, progress_var, progress_bar, progress_label, progress_window, None, total_duration)
