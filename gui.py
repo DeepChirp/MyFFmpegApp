@@ -64,26 +64,34 @@ class CreateToolTip(object):
             tw.destroy()
 
 # 提示文本功能
-def add_placeholder(entry, placeholder):
-    entry.insert(0, placeholder)
+def add_placeholder(entry, placeholder, disable_placeholder=False):
     entry_style = ttk.Style()
-    entry_style.configure("Placeholder.TEntry", foreground='grey')
-    entry.configure(style="Placeholder.TEntry")
+
+    def set_placeholder():
+        entry.insert(0, placeholder)
+        entry_style.configure("Placeholder.TEntry", foreground='grey')
+        entry.configure(style="Placeholder.TEntry")
+
+    def remove_placeholder():
+        entry.delete(0, "end")
+        entry_style.configure("TEntry", foreground='black')
+        entry.configure(style="TEntry")
 
     def on_focus_in(event):
         if entry.get() == placeholder:
-            entry.delete(0, "end")
-            entry_style.configure("TEntry", foreground='black')
-            entry.configure(style="TEntry")
+            remove_placeholder()
 
     def on_focus_out(event):
         if entry.get() == "":
-            entry.insert(0, placeholder)
-            entry_style.configure("Placeholder.TEntry", foreground='grey')
-            entry.configure(style="Placeholder.TEntry")
+            set_placeholder()
 
-    entry.bind("<FocusIn>", on_focus_in)
-    entry.bind("<FocusOut>", on_focus_out)
+    if not disable_placeholder:
+        set_placeholder()
+        entry.bind("<FocusIn>", on_focus_in)
+        entry.bind("<FocusOut>", on_focus_out)
+    else:
+        entry_style.configure("TEntry", foreground='black')
+        entry.configure(style="TEntry")
 
 def set_root(tk_root):
     global root
@@ -207,6 +215,7 @@ def export_video_window(file_paths):
                 else:
                     height = int(width * aspect_ratio.split(":")[1] / aspect_ratio.split(":")[0])  # 默认
                 custom_height_var.set(str(height))
+                add_placeholder(custom_height_entry, "高度", disable_placeholder=True)
 
         def update_width(event=None):
             if custom_height_var.get().isdigit():
@@ -218,6 +227,7 @@ def export_video_window(file_paths):
                 else:
                     width = int(height * aspect_ratio.split(":")[0] / aspect_ratio.split(":")[1])  # 默认
                 custom_width_var.set(str(width))
+                add_placeholder(custom_width_entry, "宽度", disable_placeholder=True)
 
         resolution_var.trace("w", toggle_custom_resolution)
         custom_width_entry.bind("<Return>", update_height)
