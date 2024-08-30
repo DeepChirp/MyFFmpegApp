@@ -43,8 +43,8 @@ def export_file(input_file, format, resolution, video_bitrate, audio_bitrate, qu
     # 获取输入文件的扩展名
     input_format = os.path.splitext(input_file)[1][1:]
 
-    # 处理“不转换”选项
-    if format.startswith("不转换"):
+    # 处理“原格式”选项
+    if format.startswith("原格式"):
         format = input_format
 
     # 处理编码器选项
@@ -84,9 +84,9 @@ def export_file(input_file, format, resolution, video_bitrate, audio_bitrate, qu
             command.extend(['-c:v', codec])
         if resolution:
             command.extend(['-s', resolution])
-        if video_bitrate:
+        if video_bitrate != 'kbps' and video_bitrate != '':
             command.extend(['-b:v', video_bitrate])
-        if audio_bitrate:
+        if audio_bitrate != 'kbps' and audio_bitrate != '':
             command.extend(['-b:a', audio_bitrate])
         if quality:
             command.extend(['-crf', str(quality)])
@@ -96,6 +96,9 @@ def export_file(input_file, format, resolution, video_bitrate, audio_bitrate, qu
                 command.extend(['-c:v', 'copy', '-c:a', 'copy'])
             total_duration = convert_seconds_to_time(convert_time_to_seconds(end_time) - convert_time_to_seconds(start_time))
         command.append(output_file)
+
+        # 输出执行的命令
+        print("Executing command:", " ".join(command))
 
         # 运行FFmpeg命令并显示进度
         result = run_ffmpeg_command_with_progress(command, progress_var, progress_bar, progress_label, root, start_time, total_duration)

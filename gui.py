@@ -1,7 +1,7 @@
 import os
 import threading
 import tkinter as tk
-from tkinter import ttk, StringVar, Label, OptionMenu, Button, Entry, Scale, IntVar, Frame, messagebox, filedialog, BooleanVar, Checkbutton, Toplevel, Canvas
+from tkinter import ttk, StringVar, Label, IntVar, Frame, messagebox, filedialog, BooleanVar, Toplevel, Canvas
 from file_operations import import_files, export_file
 from ffmpeg_utils import show_ffmpeg_info, run_ffmpeg_command_with_progress
 from utils import get_media_duration, get_aspect_ratio, convert_time_to_seconds, convert_seconds_to_time
@@ -308,7 +308,7 @@ def export_audio_window(file_paths):
         input_format = os.path.splitext(input_file)[1][1:]
 
         # 标题
-        title_label = ttk.Label(root, text="导出选项", font=("Helvetica", 16, "bold"))
+        title_label = Label(root, text="导出选项", font=("Helvetica", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=3, pady=10, sticky="ew")
 
         # 格式选项
@@ -369,7 +369,7 @@ def trim_media_window(file_paths):
         input_format = os.path.splitext(input_file)[1][1:]
 
         # 标题
-        title_label = ttk.Label(root, text="裁剪选项", font=("Helvetica", 16, "bold"))
+        title_label = Label(root, text="裁剪选项", font=("Helvetica", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=3, pady=10, sticky="ew")
 
         # 获取媒体文件的总时长
