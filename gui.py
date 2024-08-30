@@ -138,8 +138,8 @@ def export_video_window(file_paths):
         # 格式选项
         Label(root, text="格式:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
         format_var = StringVar(root)
-        format_var.set(f"不转换 ({input_format})")
-        format_options = [f"不转换 ({input_format})", "mp4 (h264)", "mp4 (h265)", "avi", "mkv", "mov", "flv", "webm"]
+        format_var.set(f"原格式 ({input_format})")
+        format_options = [f"原格式 ({input_format})", "mp4 (h264)", "mp4 (h265)", "avi", "mkv", "mov", "flv", "webm"]
         format_menu = OptionMenu(root, format_var, *format_options)
         format_menu.config(width=10)  # 设置下拉框宽度
         format_menu.grid(row=1, column=1, padx=5, pady=5, sticky="w")
@@ -281,8 +281,8 @@ def export_audio_window(file_paths):
         # 格式选项
         Label(root, text="格式:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
         format_var = StringVar(root)
-        format_var.set(f"不转换 ({input_format})")
-        format_options = [f"不转换 ({input_format})", "mp3", "wav", "flac", "aac", "ogg"]
+        format_var.set(f"原格式 ({input_format})")
+        format_options = [f"原格式 ({input_format})", "mp3", "wav", "flac", "aac", "ogg"]
         format_menu = OptionMenu(root, format_var, *format_options)
         format_menu.config(width=10)  # 设置下拉框宽度
         format_menu.grid(row=1, column=1, padx=5, pady=5, sticky="w")
