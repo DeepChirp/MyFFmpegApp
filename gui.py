@@ -112,7 +112,7 @@ def show_main_window():
     clear_layout()
 
     # 标题
-    title_label = ttk.Label(root, text="视频&音频处理器", font=("Helvetica", 16, "bold"))
+    title_label = ttk.Label(root, text="视频&音频处理器", font=("SimSun", 16, "bold"))
     title_label.grid(row=0, column=0, columnspan=2, pady=20)
 
     # 导入视频按钮
@@ -135,13 +135,13 @@ def show_main_window():
     footer_frame = ttk.Frame(root)
     footer_frame.grid(row=5, column=0, columnspan=2, pady=20, sticky="s")
 
-    footer_label = ttk.Label(footer_frame, text="© 2024 视频处理器", font=("Helvetica", 10), foreground="gray")
+    footer_label = ttk.Label(footer_frame, text="© 2024 视频处理器", font=("SimSun", 10), foreground="gray")
     footer_label.pack(side="left")
 
-    separator_label = ttk.Label(footer_frame, text=" | ", font=("Helvetica", 10), foreground="gray")
+    separator_label = ttk.Label(footer_frame, text=" | ", font=("SimSun", 10), foreground="gray")
     separator_label.pack(side="left")
 
-    ffmpeg_info_label = ttk.Label(footer_frame, text="查看FFmpeg信息", font=("Helvetica", 10, "underline"), foreground="gray", cursor="hand2")
+    ffmpeg_info_label = ttk.Label(footer_frame, text="查看FFmpeg信息", font=("SimSun", 10, "underline"), foreground="gray", cursor="hand2")
     ffmpeg_info_label.pack(side="left")
     ffmpeg_info_label.bind("<Button-1>", lambda e: show_ffmpeg_info())
 
@@ -162,7 +162,7 @@ def export_video_window(file_paths):
         aspect_ratio = get_aspect_ratio(input_file)
 
         # 标题
-        title_label = Label(root, text="导出选项", font=("Helvetica", 16, "bold"))
+        title_label = Label(root, text="导出选项", font=("SimSun", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=3, pady=10, sticky="ew")
 
         # 格式选项
@@ -308,7 +308,7 @@ def export_audio_window(file_paths):
         input_format = os.path.splitext(input_file)[1][1:]
 
         # 标题
-        title_label = Label(root, text="导出选项", font=("Helvetica", 16, "bold"))
+        title_label = Label(root, text="导出选项", font=("SimSun", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=3, pady=10, sticky="ew")
 
         # 格式选项
@@ -369,7 +369,7 @@ def trim_media_window(file_paths):
         input_format = os.path.splitext(input_file)[1][1:]
 
         # 标题
-        title_label = Label(root, text="裁剪选项", font=("Helvetica", 16, "bold"))
+        title_label = Label(root, text="裁剪选项", font=("SimSun", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=3, pady=10, sticky="ew")
 
         # 获取媒体文件的总时长
