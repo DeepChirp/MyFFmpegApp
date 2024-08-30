@@ -57,7 +57,9 @@ def export_file(input_file, format, resolution, video_bitrate, audio_bitrate, qu
         codec = "libx265"
 
     # 处理自定义分辨率
-    if resolution == "自定义":
+    if resolution == "与原视频相同":
+        resolution = None
+    elif resolution == "自定义":
         resolution = f"{custom_width}x{custom_height}"
 
     total_duration = None

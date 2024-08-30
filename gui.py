@@ -63,6 +63,28 @@ class CreateToolTip(object):
         if tw:
             tw.destroy()
 
+# 提示文本功能
+def add_placeholder(entry, placeholder):
+    entry.insert(0, placeholder)
+    entry_style = ttk.Style()
+    entry_style.configure("Placeholder.TEntry", foreground='grey')
+    entry.configure(style="Placeholder.TEntry")
+
+    def on_focus_in(event):
+        if entry.get() == placeholder:
+            entry.delete(0, "end")
+            entry_style.configure("TEntry", foreground='black')
+            entry.configure(style="TEntry")
+
+    def on_focus_out(event):
+        if entry.get() == "":
+            entry.insert(0, placeholder)
+            entry_style.configure("Placeholder.TEntry", foreground='grey')
+            entry.configure(style="Placeholder.TEntry")
+
+    entry.bind("<FocusIn>", on_focus_in)
+    entry.bind("<FocusOut>", on_focus_out)
+
 def set_root(tk_root):
     global root
     root = tk_root
@@ -82,36 +104,36 @@ def show_main_window():
     clear_layout()
 
     # 标题
-    title_label = Label(root, text="视频&音频处理器", font=("Helvetica", 16, "bold"))
+    title_label = ttk.Label(root, text="视频&音频处理器", font=("Helvetica", 16, "bold"))
     title_label.grid(row=0, column=0, columnspan=2, pady=20)
 
     # 导入视频按钮
-    import_video_button = Button(root, text="导入视频", command=lambda: import_files(1, ["视频"], export_video_window), width=20)
+    import_video_button = ttk.Button(root, text="导入视频", command=lambda: import_files(1, ["视频"], export_video_window), width=20)
     import_video_button.grid(row=1, column=0, columnspan=2, pady=10)
 
     # 导入音频按钮
-    import_audio_button = Button(root, text="导入音频", command=lambda: import_files(1, ["音频"], export_audio_window), width=20)
+    import_audio_button = ttk.Button(root, text="导入音频", command=lambda: import_files(1, ["音频"], export_audio_window), width=20)
     import_audio_button.grid(row=2, column=0, columnspan=2, pady=10)
 
     # 裁剪视频或音频按钮
-    trim_media_button = Button(root, text="裁剪视频或音频", command=lambda: import_files(1, ["媒体"], trim_media_window), width=20)
+    trim_media_button = ttk.Button(root, text="裁剪视频或音频", command=lambda: import_files(1, ["媒体"], trim_media_window), width=20)
     trim_media_button.grid(row=3, column=0, columnspan=2, pady=10)
 
     # 合并视频与音频按钮
-    merge_video_audio_button = Button(root, text="合并视频与音频", command=lambda: import_files(2, ["视频", "音频"], merge_audio_video), width=20)
+    merge_video_audio_button = ttk.Button(root, text="合并视频与音频", command=lambda: import_files(2, ["视频", "音频"], merge_audio_video), width=20)
     merge_video_audio_button.grid(row=4, column=0, columnspan=2, pady=10)
 
     # 版权信息和FFmpeg信息
-    footer_frame = Frame(root)
+    footer_frame = ttk.Frame(root)
     footer_frame.grid(row=5, column=0, columnspan=2, pady=20, sticky="s")
 
-    footer_label = Label(footer_frame, text="© 2024 视频处理器", font=("Helvetica", 10), fg="gray")
+    footer_label = ttk.Label(footer_frame, text="© 2024 视频处理器", font=("Helvetica", 10), foreground="gray")
     footer_label.pack(side="left")
 
-    separator_label = Label(footer_frame, text=" | ", font=("Helvetica", 10), fg="gray")
+    separator_label = ttk.Label(footer_frame, text=" | ", font=("Helvetica", 10), foreground="gray")
     separator_label.pack(side="left")
 
-    ffmpeg_info_label = Label(footer_frame, text="查看FFmpeg信息", font=("Helvetica", 10, "underline"), fg="gray", cursor="hand2")
+    ffmpeg_info_label = ttk.Label(footer_frame, text="查看FFmpeg信息", font=("Helvetica", 10, "underline"), foreground="gray", cursor="hand2")
     ffmpeg_info_label.pack(side="left")
     ffmpeg_info_label.bind("<Button-1>", lambda e: show_ffmpeg_info())
 
@@ -140,46 +162,42 @@ def export_video_window(file_paths):
         format_var = StringVar(root)
         format_var.set(f"原格式 ({input_format})")
         format_options = [f"原格式 ({input_format})", "mp4 (h264)", "mp4 (h265)", "avi", "mkv", "mov", "flv", "webm"]
-        format_menu = OptionMenu(root, format_var, *format_options)
-        format_menu.config(width=10)  # 设置下拉框宽度
+        format_menu = ttk.Combobox(root, textvariable=format_var, values=format_options, state="readonly")
+        format_menu.config(width=15)  # 设置下拉框宽度
         format_menu.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
         # 分辨率选项
         Label(root, text="分辨率:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
         resolution_var = StringVar(root)
-        resolution_var.set("")
-        resolution_options = [""]  # 添加空选项
+        resolution_var.set("与原视频相同")
+        resolution_options = ["与原视频相同"]  # 添加默认选项
         if aspect_ratio == "4:3":
             resolution_options += ["640x480", "800x600", "1024x768", "自定义"]
         elif aspect_ratio == "16:9":
             resolution_options += ["1280x720", "1920x1080", "2560x1440", "自定义"]
         else:
             resolution_options += ["自定义"]  # 默认选项
-        resolution_menu = OptionMenu(root, resolution_var, *resolution_options, command=lambda x: toggle_custom_resolution(x))
-        resolution_menu.config(width=10)  # 设置下拉框宽度
+        resolution_menu = ttk.Combobox(root, textvariable=resolution_var, values=resolution_options, state="readonly")
+        resolution_menu.config(width=15)  # 设置下拉框宽度
         resolution_menu.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
-        # 自定义分辨率输入框
+        # 自定义分辨率输入框容器
+        custom_resolution_frame = Frame(root)
         custom_width_var = StringVar(root)
         custom_height_var = StringVar(root)
-        custom_width_label = Label(root, text="宽度:")
-        custom_height_label = Label(root, text="高度:")
-        custom_width_entry = Entry(root, textvariable=custom_width_var, width=10)
-        custom_height_entry = Entry(root, textvariable=custom_height_var, width=10)
+        custom_width_entry = ttk.Entry(custom_resolution_frame, textvariable=custom_width_var, width=8)  # 调整输入框宽度
+        custom_height_entry = ttk.Entry(custom_resolution_frame, textvariable=custom_height_var, width=8)  # 调整输入框宽度
 
-        def toggle_custom_resolution(selected_option):
-            if selected_option == "自定义":
-                custom_width_label.grid(row=3, column=0, padx=5, pady=5, sticky="e")
-                custom_width_entry.grid(row=3, column=1, padx=5, pady=5, sticky="w")
-                custom_height_label.grid(row=3, column=2, padx=5, pady=5, sticky="e")
-                custom_height_entry.grid(row=3, column=3, padx=5, pady=5, sticky="w")
+        custom_width_entry.grid(row=0, column=0, padx=(5, 2), pady=5, sticky="w")
+        custom_height_entry.grid(row=0, column=1, padx=(2, 5), pady=5, sticky="w")
+
+        def toggle_custom_resolution(*args):
+            if resolution_var.get() == "自定义":
+                custom_resolution_frame.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="w")
             else:
-                custom_width_label.grid_remove()
-                custom_width_entry.grid_remove()
-                custom_height_label.grid_remove()
-                custom_height_entry.grid_remove()
+                custom_resolution_frame.grid_remove()
 
-        def update_custom_resolution(*args):
+        def update_height(event=None):
             if custom_width_var.get().isdigit():
                 width = int(custom_width_var.get())
                 if aspect_ratio == "4:3":
@@ -187,66 +205,71 @@ def export_video_window(file_paths):
                 elif aspect_ratio == "16:9":
                     height = int(width * 9 / 16)
                 else:
-                    height = int(width * 9 / 16)  # 默认16:9
+                    height = int(width * aspect_ratio.split(":")[1] / aspect_ratio.split(":")[0])  # 默认
                 custom_height_var.set(str(height))
-            elif custom_height_var.get().isdigit():
+
+        def update_width(event=None):
+            if custom_height_var.get().isdigit():
                 height = int(custom_height_var.get())
                 if aspect_ratio == "4:3":
                     width = int(height * 4 / 3)
                 elif aspect_ratio == "16:9":
                     width = int(height * 16 / 9)
                 else:
-                    width = int(height * 16 / 9)  # 默认16:9
+                    width = int(height * aspect_ratio.split(":")[0] / aspect_ratio.split(":")[1])  # 默认
                 custom_width_var.set(str(width))
 
-        custom_width_var.trace("w", update_custom_resolution)
-        custom_height_var.trace("w", update_custom_resolution)
+        resolution_var.trace("w", toggle_custom_resolution)
+        custom_width_entry.bind("<Return>", update_height)
+        custom_height_entry.bind("<Return>", update_width)
 
-        # 初始隐藏自定义分辨率输入框
-        custom_width_label.grid_remove()
-        custom_width_entry.grid_remove()
-        custom_height_label.grid_remove()
-        custom_height_entry.grid_remove()
+        # 初始隐藏自定义分辨率输入框容器
+        custom_resolution_frame.grid_remove()
 
         # 视频码率选项
-        Label(root, text="视频码率 (kbps):").grid(row=4, column=0, padx=5, pady=5, sticky="e")
+        Label(root, text="视频码率:").grid(row=4, column=0, padx=5, pady=5, sticky="e")
         video_bitrate_var = StringVar(root)
         video_bitrate_var.set("")
-        video_bitrate_entry = Entry(root, textvariable=video_bitrate_var, width=10)
+        video_bitrate_entry = ttk.Entry(root, textvariable=video_bitrate_var, width=18)  # 调整输入框宽度
         video_bitrate_entry.grid(row=4, column=1, padx=5, pady=5, sticky="w")
 
         # 音频码率选项
-        Label(root, text="音频码率 (kbps):").grid(row=5, column=0, padx=5, pady=5, sticky="e")
+        Label(root, text="音频码率:").grid(row=5, column=0, padx=5, pady=5, sticky="e")
         audio_bitrate_var = StringVar(root)
         audio_bitrate_var.set("")
-        audio_bitrate_entry = Entry(root, textvariable=audio_bitrate_var, width=10)
+        audio_bitrate_entry = ttk.Entry(root, textvariable=audio_bitrate_var, width=18)  # 调整输入框宽度
         audio_bitrate_entry.grid(row=5, column=1, padx=5, pady=5, sticky="w")
 
+        add_placeholder(video_bitrate_entry, "kbps")
+        add_placeholder(audio_bitrate_entry, "kbps")
+        add_placeholder(custom_width_entry, "宽度")
+        add_placeholder(custom_height_entry, "高度")
+
         # 质量选项
-        Label(root, text="质量 (0-51):\n(数值越大，质量越低)").grid(row=6, column=0, padx=5, pady=5, sticky="e")
+        Label(root, text="质量").grid(row=6, column=0, padx=5, pady=5, sticky="e")
         quality_var = IntVar(root)
-        quality_var.set(23)  # 默认值
-        quality_scale = Scale(root, from_=0, to=51, orient="horizontal", variable=quality_var, length=150)
+        quality_var.set(28)  # 默认值
+        quality_scale = ttk.Scale(root, from_=0, to=51, orient="horizontal", variable=quality_var, length=150)
         quality_scale.grid(row=6, column=1, padx=5, pady=5, sticky="w")
 
-        default_quality_button = Button(root, text="默认值", command=lambda: quality_var.set(23))
+        default_quality_button = ttk.Button(root, text="默认值", command=lambda: quality_var.set(28))
         default_quality_button.grid(row=6, column=2, padx=5, pady=5, sticky="w")
         CreateToolTip(default_quality_button, text="点击恢复默认值")
 
         # 保留元数据复选框
         metadata_var = BooleanVar()
         metadata_var.set(True)
-        metadata_checkbutton = Checkbutton(root, text=" 保留元数据", variable=metadata_var, anchor="w", justify="left")
+        metadata_checkbutton = ttk.Checkbutton(root, text=" 保留元数据", variable=metadata_var)
         metadata_checkbutton.grid(row=7, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
         # 导出和返回按钮
         button_frame = Frame(root)
         button_frame.grid(row=8, column=0, columnspan=3, pady=10)
 
-        back_button = Button(button_frame, text="返回", command=show_main_window)
+        back_button = ttk.Button(button_frame, text="返回", command=show_main_window)
         back_button.grid(row=0, column=0, padx=5)
 
-        export_button = Button(button_frame, text="导出", command=lambda: start_export_thread(input_file, format_var.get(), resolution_var.get(), video_bitrate_var.get(), audio_bitrate_var.get(), quality_var.get(), export_button, back_button, progress_bar, progress_var, progress_label, custom_width_var.get(), custom_height_var.get(), metadata_var.get(), None, None, False, root))
+        export_button = ttk.Button(button_frame, text="导出", command=lambda: start_export_thread(input_file, format_var.get(), resolution_var.get(), video_bitrate_var.get(), audio_bitrate_var.get(), 51 - quality_var.get(), export_button, back_button, progress_bar, progress_var, progress_label, custom_width_var.get(), custom_height_var.get(), metadata_var.get(), None, None, False, root))
         export_button.grid(row=0, column=1, padx=5)
 
         # 进度条
@@ -275,45 +298,45 @@ def export_audio_window(file_paths):
         input_format = os.path.splitext(input_file)[1][1:]
 
         # 标题
-        title_label = Label(root, text="导出选项", font=("Helvetica", 16, "bold"))
+        title_label = ttk.Label(root, text="导出选项", font=("Helvetica", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=3, pady=10, sticky="ew")
 
         # 格式选项
-        Label(root, text="格式:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
+        ttk.Label(root, text="格式:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
         format_var = StringVar(root)
         format_var.set(f"原格式 ({input_format})")
         format_options = [f"原格式 ({input_format})", "mp3", "wav", "flac", "aac", "ogg"]
-        format_menu = OptionMenu(root, format_var, *format_options)
+        format_menu = ttk.Combobox(root, textvariable=format_var, values=format_options, state="readonly")
         format_menu.config(width=10)  # 设置下拉框宽度
         format_menu.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
         # 音频码率选项
-        Label(root, text="音频码率 (kbps):").grid(row=2, column=0, padx=5, pady=5, sticky="e")
+        ttk.Label(root, text="音频码率 (kbps):").grid(row=2, column=0, padx=5, pady=5, sticky="e")
         audio_bitrate_var = StringVar(root)
         audio_bitrate_var.set("")
-        audio_bitrate_entry = Entry(root, textvariable=audio_bitrate_var, width=10)
+        audio_bitrate_entry = ttk.Entry(root, textvariable=audio_bitrate_var, width=10)
         audio_bitrate_entry.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
         # 保留元数据复选框
         metadata_var = BooleanVar()
         metadata_var.set(True)
-        metadata_checkbutton = Checkbutton(root, text=" 保留元数据", variable=metadata_var, anchor="w", justify="left")
+        metadata_checkbutton = ttk.Checkbutton(root, text=" 保留元数据", variable=metadata_var)
         metadata_checkbutton.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
         # 导出和返回按钮
-        button_frame = Frame(root)
+        button_frame = ttk.Frame(root)
         button_frame.grid(row=4, column=0, columnspan=3, pady=10)
 
-        back_button = Button(button_frame, text="返回", command=show_main_window)
+        back_button = ttk.Button(button_frame, text="返回", command=show_main_window)
         back_button.grid(row=0, column=0, padx=5)
 
-        export_button = Button(button_frame, text="导出", command=lambda: start_export_thread(input_file, format_var.get(), None, None, audio_bitrate_var.get(), None, export_button, back_button, progress_bar, progress_var, progress_label, None, None, metadata_var.get(), None, None, False, root))
+        export_button = ttk.Button(button_frame, text="导出", command=lambda: start_export_thread(input_file, format_var.get(), None, None, audio_bitrate_var.get(), None, export_button, back_button, progress_bar, progress_var, progress_label, None, None, metadata_var.get(), None, None, False, root))
         export_button.grid(row=0, column=1, padx=5)
 
         # 进度条
         progress_var = StringVar()
         progress_var.set("进度: 0%")
-        progress_label = Label(root, textvariable=progress_var)
+        progress_label = ttk.Label(root, textvariable=progress_var)
         progress_label.grid(row=4, column=0, columnspan=3, pady=5, sticky="ew")
         progress_label.grid_remove()  # 初始隐藏进度标签
         progress_bar = ttk.Progressbar(root, orient="horizontal", length=200, mode="determinate")
@@ -336,7 +359,7 @@ def trim_media_window(file_paths):
         input_format = os.path.splitext(input_file)[1][1:]
 
         # 标题
-        title_label = Label(root, text="裁剪选项", font=("Helvetica", 16, "bold"))
+        title_label = ttk.Label(root, text="裁剪选项", font=("Helvetica", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=3, pady=10, sticky="ew")
 
         # 获取媒体文件的总时长
@@ -352,7 +375,7 @@ def trim_media_window(file_paths):
         end_time_var.set(total_duration)
 
         # 实时预览滑动条
-        scale_frame = Frame(root)
+        scale_frame = ttk.Frame(root)
         scale_frame.grid(row=1, column=0, columnspan=3, pady=10, sticky="ew")
 
         canvas = Canvas(scale_frame, height=50)
@@ -393,33 +416,33 @@ def trim_media_window(file_paths):
         canvas.bind("<Configure>", resize)
 
         # 显示开始时间和结束时间
-        time_frame = Frame(root)
+        time_frame = ttk.Frame(root)
         time_frame.grid(row=2, column=0, columnspan=3, pady=10, sticky="ew")
 
-        start_time_label = Label(time_frame, textvariable=start_time_var)
+        start_time_label = ttk.Label(time_frame, textvariable=start_time_var)
         start_time_label.pack(side="left", padx=10)
-        end_time_label = Label(time_frame, textvariable=end_time_var)
+        end_time_label = ttk.Label(time_frame, textvariable=end_time_var)
         end_time_label.pack(side="right", padx=10)
 
         # 快速裁剪复选框
         quick_trim_var = BooleanVar()
-        quick_trim_checkbox = Checkbutton(root, text="快速裁剪（开头和结尾的部分帧可能会出现问题）", variable=quick_trim_var)
+        quick_trim_checkbox = ttk.Checkbutton(root, text="快速裁剪（开头和结尾的部分帧可能会出现问题）", variable=quick_trim_var)
         quick_trim_checkbox.grid(row=3, column=0, columnspan=3, pady=5)
 
         # 导出和返回按钮
-        button_frame = Frame(root)
+        button_frame = ttk.Frame(root)
         button_frame.grid(row=4, column=0, columnspan=3, pady=10)
 
-        back_button = Button(button_frame, text="返回", command=show_main_window)
+        back_button = ttk.Button(button_frame, text="返回", command=show_main_window)
         back_button.grid(row=0, column=0, padx=5)
 
-        export_button = Button(button_frame, text="导出", command=lambda: start_export_thread(input_file, "不转换", None, None, None, None, export_button, back_button, progress_bar, progress_var, progress_label, None, None, quick_trim_var.get(), start_time_var.get(), end_time_var.get(), quick_trim_var.get(), root))
+        export_button = ttk.Button(button_frame, text="导出", command=lambda: start_export_thread(input_file, "不转换", None, None, None, None, export_button, back_button, progress_bar, progress_var, progress_label, None, None, quick_trim_var.get(), start_time_var.get(), end_time_var.get(), quick_trim_var.get(), root))
         export_button.grid(row=0, column=1, padx=5)
 
         # 进度条
         progress_var = StringVar()
         progress_var.set("进度: 0%")
-        progress_label = Label(root, textvariable=progress_var)
+        progress_label = ttk.Label(root, textvariable=progress_var)
         progress_label.grid(row=4, column=0, columnspan=3, pady=5, sticky="ew")
         progress_label.grid_remove()  # 初始隐藏进度标签
         progress_bar = ttk.Progressbar(root, orient="horizontal", length=200, mode="determinate")
