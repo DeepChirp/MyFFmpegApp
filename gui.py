@@ -255,8 +255,8 @@ def export_video_window(file_paths):
         add_placeholder(custom_width_entry, "宽度")
         add_placeholder(custom_height_entry, "高度")
 
-        # 质量选项
-        Label(root, text="质量").grid(row=6, column=0, padx=5, pady=5, sticky="e")
+        # 品质选项
+        Label(root, text="品质").grid(row=6, column=0, padx=5, pady=5, sticky="e")
         quality_var = IntVar(root)
         quality_var.set(28)  # 默认值
         quality_scale = ttk.Scale(root, from_=0, to=51, orient="horizontal", variable=quality_var, length=150)
