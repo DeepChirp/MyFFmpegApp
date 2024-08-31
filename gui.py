@@ -317,15 +317,17 @@ def export_audio_window(file_paths):
         format_var.set(f"原格式 ({input_format})")
         format_options = [f"原格式 ({input_format})", "mp3", "wav", "flac", "aac", "ogg"]
         format_menu = ttk.Combobox(root, textvariable=format_var, values=format_options, state="readonly")
-        format_menu.config(width=10)  # 设置下拉框宽度
+        format_menu.config(width=15)  # 设置下拉框宽度
         format_menu.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
         # 音频码率选项
-        ttk.Label(root, text="音频码率 (kbps):").grid(row=2, column=0, padx=5, pady=5, sticky="e")
+        ttk.Label(root, text="音频码率:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
         audio_bitrate_var = StringVar(root)
         audio_bitrate_var.set("")
-        audio_bitrate_entry = ttk.Entry(root, textvariable=audio_bitrate_var, width=10)
+        audio_bitrate_entry = ttk.Entry(root, textvariable=audio_bitrate_var, width=18)  # 设置输入框宽度
         audio_bitrate_entry.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+
+        add_placeholder(audio_bitrate_entry, "kbps")
 
         # 保留元数据复选框
         metadata_var = BooleanVar()
