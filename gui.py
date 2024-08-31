@@ -1,7 +1,8 @@
 import os
 import threading
 import tkinter as tk
-from tkinter import ttk, StringVar, Label, IntVar, Frame, messagebox, filedialog, BooleanVar, Toplevel, Canvas
+import json
+from tkinter import ttk, StringVar, Label, IntVar, Frame, messagebox, filedialog, BooleanVar, Toplevel, Canvas, Menu
 from file_operations import import_files, export_file
 from ffmpeg_utils import show_ffmpeg_info, run_ffmpeg_command_with_progress
 from utils import get_media_duration, get_aspect_ratio, convert_time_to_seconds, convert_seconds_to_time
@@ -127,9 +128,9 @@ def show_main_window():
     trim_media_button = ttk.Button(root, text="裁剪视频或音频", command=lambda: import_files(1, ["媒体"], trim_media_window), width=20)
     trim_media_button.grid(row=3, column=0, columnspan=2, pady=10)
 
-    # 合并视频与音频按钮
-    merge_video_audio_button = ttk.Button(root, text="合并视频与音频", command=lambda: import_files(2, ["视频", "音频"], merge_audio_video), width=20)
-    merge_video_audio_button.grid(row=4, column=0, columnspan=2, pady=10)
+    # 预设按钮
+    preset_button = ttk.Button(root, text="预设", command=lambda: show_preset_window(), width=20)
+    preset_button.grid(row=4, column=0, columnspan=2, pady=10)
 
     # 版权信息和FFmpeg信息
     footer_frame = ttk.Frame(root)
@@ -467,49 +468,271 @@ def trim_media_window(file_paths):
         for i in range(6):
             root.rowconfigure(i, weight=1)
 
-def merge_audio_video(file_paths):
-    if len(file_paths) != 2:
-        messagebox.showerror("错误", "需要选择一个视频文件和一个音频文件")
-        return
-    video_file, audio_file = file_paths
+def show_preset_window():
+    # 确保 data 目录存在
+    data_dir = "data"
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
 
-    output_file = filedialog.asksaveasfilename(
-        title="保存合并文件",
-        defaultextension=".mp4",
-        filetypes=[("MP4 文件", "*.mp4"), ("所有文件", "*.*")]
-    )
-    if output_file:
-        # 获取视频和音频的总时长
-        video_duration = get_media_duration(video_file)
-        audio_duration = get_media_duration(audio_file)
-        if not video_duration or not audio_duration:
-            messagebox.showerror("错误", "无法获取视频或音频的时长")
+    # 确保 presets.json 文件存在
+    preset_file = os.path.join(data_dir, "presets.json")
+    if not os.path.exists(preset_file):
+        with open(preset_file, 'w', encoding='utf-8') as f:
+            json.dump([], f)
+
+    # 读取预设文件
+    with open(preset_file, 'r', encoding='utf-8') as f:
+        presets = json.load(f)
+
+    # 按照 key 排序预设
+    presets.sort(key=lambda x: x["key"])
+
+    # 创建预设管理窗口
+    preset_window = Toplevel(root)
+    preset_window.title("预设管理")
+
+    # 显示预设的表格
+    columns = ("命令", "描述", "输出格式")
+    tree = ttk.Treeview(preset_window, columns=columns, show="headings")
+    for col in columns:
+        tree.heading(col, text=col)
+    for preset in presets:
+        output_type_display = "与导入格式相同" if preset["output_type"] == "keep" else preset["output_type"]
+        tree.insert("", "end", iid=preset["key"], values=(preset["command"], preset["description"], output_type_display))
+    tree.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
+
+    # 添加、修改、删除按钮
+    add_button = ttk.Button(preset_window, text="添加", command=lambda: add_preset(preset_window, tree, presets, preset_file))
+    add_button.grid(row=1, column=0, padx=5, pady=5)
+    edit_button = ttk.Button(preset_window, text="修改", command=lambda: edit_preset(preset_window, tree, presets, preset_file))
+    edit_button.grid(row=1, column=1, padx=5, pady=5)
+    delete_button = ttk.Button(preset_window, text="删除", command=lambda: delete_preset(tree, presets, preset_file))
+    delete_button.grid(row=1, column=2, padx=5, pady=5)
+    run_button = ttk.Button(preset_window, text="运行", command=lambda: run_preset(tree))
+    run_button.grid(row=1, column=3, padx=5, pady=5)
+
+    # 创建右键菜单
+    def show_context_menu(event):
+        context_menu.post(event.x_root, event.y_root)
+
+    context_menu = Menu(preset_window, tearoff=0)
+    context_menu.add_command(label="上移", command=lambda: move_preset(tree, presets, preset_file, -1))
+    context_menu.add_command(label="下移", command=lambda: move_preset(tree, presets, preset_file, 1))
+
+    tree.bind("<Button-3>", show_context_menu)
+
+    def move_preset(tree, presets, preset_file, direction):
+        selected_item = tree.selection()
+        if not selected_item:
+            messagebox.showwarning("警告", "请选择一个预设进行移动")
             return
 
-        # 取较短的总时长
-        total_duration = min(video_duration, audio_duration, key=convert_time_to_seconds)
+        selected_item = selected_item[0]
+        index = next((i for i, preset in enumerate(presets) if preset["key"] == int(selected_item)), None)
+        if index is None:
+            return
 
-        command = ['ffmpeg', '-i', video_file, '-i', audio_file, '-c:v', 'copy', '-c:a', 'copy', output_file]
+        new_index = index + direction
+        if new_index < 0 or new_index >= len(presets):
+            return
 
-        # 创建新窗口
-        progress_window = Toplevel(root)
-        progress_window.title("合并进度")
+        # 交换预设位置
+        presets[index], presets[new_index] = presets[new_index], presets[index]
 
-        # 显示进度条和进度标签
-        progress_var = StringVar()
-        progress_bar = ttk.Progressbar(progress_window, orient="horizontal", length=300, mode="determinate")
-        progress_bar.grid(pady=10)
-        progress_label = Label(progress_window, textvariable=progress_var)
-        progress_label.grid(pady=5)
+        # 更新 key 值以反映新的顺序
+        for i, preset in enumerate(presets):
+            preset["key"] = i + 1
 
-        def merge_and_update():
-            result = run_ffmpeg_command_with_progress(command, progress_var, progress_bar, progress_label, progress_window, None, total_duration)
-            messagebox.showinfo("合并结果", f"合并完成，返回码: {result}")
-            progress_window.destroy()
+        # 重新保存 JSON 文件
+        with open(preset_file, 'w', encoding='utf-8') as f:
+            json.dump(presets, f, ensure_ascii=False, indent=4)
 
-        # 启动合并线程
-        merge_thread = threading.Thread(target=merge_and_update)
-        merge_thread.start()
+        # 重新加载 Treeview
+        tree.delete(*tree.get_children())
+        for preset in presets:
+            output_type_display = "与导入格式相同" if preset["output_type"] == "keep" else preset["output_type"]
+            tree.insert("", "end", iid=preset["key"], values=(preset["command"], preset["description"], output_type_display))
+
+    def add_preset(preset_window, tree, presets, preset_file):
+        def save_preset():
+            updated_output_type = output_type_var.get()
+            if updated_output_type == "与导入格式相同":
+                updated_output_type = "keep"
+
+            new_preset = {
+                "key": max(preset["key"] for preset in presets) + 1 if presets else 1,
+                "command": command_var.get(),
+                "description": description_var.get(),
+                "output_type": updated_output_type
+            }
+            presets.append(new_preset)
+            with open(preset_file, 'w', encoding='utf-8') as f:
+                json.dump(presets, f, ensure_ascii=False, indent=4)
+
+            output_type_display = "与导入格式相同" if new_preset["output_type"] == "keep" else new_preset["output_type"]
+            tree.insert("", "end", iid=new_preset["key"], values=(new_preset["command"], new_preset["description"], output_type_display))
+            add_window.destroy()
+
+        add_window = Toplevel(preset_window)
+        add_window.title("添加预设")
+
+        command_var = StringVar()
+        description_var = StringVar()
+        output_type_var = StringVar()
+
+        ttk.Label(add_window, text="命令:").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Entry(add_window, textvariable=command_var).grid(row=0, column=1, padx=5, pady=5)
+        ttk.Label(add_window, text="描述:").grid(row=1, column=0, padx=5, pady=5)
+        ttk.Entry(add_window, textvariable=description_var).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Label(add_window, text="输出格式:").grid(row=2, column=0, padx=5, pady=5)
+        ttk.Entry(add_window, textvariable=output_type_var).grid(row=2, column=1, padx=5, pady=5)
+
+        save_button = ttk.Button(add_window, text="保存", command=save_preset)
+        save_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+
+    def edit_preset(preset_window, tree, presets, preset_file):
+        selected_item = tree.selection()
+        if not selected_item:
+            messagebox.showwarning("警告", "请选择一个预设进行修改")
+            return
+
+        selected_item = selected_item[0]
+        selected_preset = tree.item(selected_item, "values")
+
+        def save_preset():
+            updated_output_type = output_type_var.get()
+            if updated_output_type == "与导入格式相同":
+                updated_output_type = "keep"
+
+            updated_preset = {
+                "key": int(selected_item),
+                "command": command_var.get(),
+                "description": description_var.get(),
+                "output_type": updated_output_type
+            }
+            for i, preset in enumerate(presets):
+                if preset["key"] == int(selected_item):
+                    presets[i] = updated_preset
+                    break
+            with open(preset_file, 'w', encoding='utf-8') as f:
+                json.dump(presets, f, ensure_ascii=False, indent=4)
+
+            # 删除旧项并插入新项
+            tree.delete(selected_item)
+            output_type_display = "与导入格式相同" if updated_preset["output_type"] == "keep" else updated_preset["output_type"]
+            tree.insert("", "end", iid=updated_preset["key"], values=(updated_preset["command"], updated_preset["description"], output_type_display))
+            edit_window.destroy()
+
+        edit_window = Toplevel(preset_window)
+        edit_window.title("修改预设")
+
+        command_var = StringVar(value=selected_preset[0])
+        description_var = StringVar(value=selected_preset[1])
+        output_type_display = "与导入格式相同" if selected_preset[2] == "keep" else selected_preset[2]
+        output_type_var = StringVar(value=output_type_display)
+
+        ttk.Label(edit_window, text="命令:").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Entry(edit_window, textvariable=command_var).grid(row=0, column=1, padx=5, pady=5)
+        ttk.Label(edit_window, text="描述:").grid(row=1, column=0, padx=5, pady=5)
+        ttk.Entry(edit_window, textvariable=description_var).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Label(edit_window, text="输出格式:").grid(row=2, column=0, padx=5, pady=5)
+        ttk.Entry(edit_window, textvariable=output_type_var).grid(row=2, column=1, padx=5, pady=5)
+
+        save_button = ttk.Button(edit_window, text="保存", command=save_preset)
+        save_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+
+    def delete_preset(tree, presets, preset_file):
+        selected_item = tree.selection()
+        if not selected_item:
+            messagebox.showwarning("警告", "请选择一个预设进行删除")
+            return
+
+        selected_item = selected_item[0]
+        selected_key = int(selected_item)
+
+        # 在 presets 列表中查找具有相同 key 的项并删除
+        for i, preset in enumerate(presets):
+            if preset["key"] == selected_key:
+                del presets[i]
+                break
+
+        # 更新剩余预设的 key 值
+        for i, preset in enumerate(presets):
+            preset["key"] = i + 1
+
+        # 更新 Treeview 和预设文件
+        tree.delete(selected_item)
+        with open(preset_file, 'w', encoding='utf-8') as f:
+            json.dump(presets, f, ensure_ascii=False, indent=4)
+
+        # 重新加载 Treeview
+        tree.delete(*tree.get_children())
+        for preset in presets:
+            output_type_display = "与导入格式相同" if preset["output_type"] == "keep" else preset["output_type"]
+            tree.insert("", "end", iid=preset["key"], values=(preset["command"], preset["description"], output_type_display))
+
+    def run_preset(tree):
+        selected_item = tree.selection()[0]
+        selected_preset = tree.item(selected_item, "values")
+
+        # 调整索引，假设 key 列不可见
+        command = selected_preset[0]
+        output_type = selected_preset[2]
+
+        # 解析命令中的文件类型
+        file_types = []
+        placeholders = ["[视频]", "[音频]", "[媒体]", "[字幕]"]
+        for placeholder in placeholders:
+            start = 0
+            while True:
+                start = command.find(placeholder, start)
+                if start == -1:
+                    break
+                file_types.append(placeholder.strip("[]"))
+                start += len(placeholder)
+
+        def execute_command(file_paths, command):
+            # 替换命令中的文件占位符
+            for i, file_path in enumerate(file_paths):
+                command = command.replace(f"[{file_types[i]}]", file_path, 1)
+
+            # 如果 output_type 是 keep，则使用输入文件的扩展名
+            if output_type == "keep":
+                input_file_extension = os.path.splitext(file_paths[0])[1]
+                output_extension = input_file_extension
+            else:
+                output_extension = f".{output_type}"
+
+            # 让用户指定输出文件名
+            output_file = filedialog.asksaveasfilename(
+                title="保存文件",
+                defaultextension=output_extension,
+                filetypes=[(f"{output_extension.upper()} 文件", f"*{output_extension}"), ("所有文件", "*.*")]
+            )
+            if output_file:
+                command = command.replace("[输出]", output_file)
+
+                # 创建新窗口
+                progress_window = Toplevel(root)
+                progress_window.title("进度")
+
+                # 显示进度条和进度标签
+                progress_var = StringVar()
+                progress_bar = ttk.Progressbar(progress_window, orient="horizontal", length=300, mode="determinate")
+                progress_bar.grid(pady=10)
+                progress_label = Label(progress_window, textvariable=progress_var)
+                progress_label.grid(pady=5)
+
+                def run_and_update():
+                    result = run_ffmpeg_command_with_progress(command.split(), progress_var, progress_bar, progress_label, progress_window, None, None)
+                    messagebox.showinfo("结果", f"完成，返回码: {result}")
+                    progress_window.destroy()
+
+                # 启动线程
+                merge_thread = threading.Thread(target=run_and_update)
+                merge_thread.start()
+
+        import_files(len(file_types), file_types, lambda file_paths: execute_command(file_paths, command))
 
 def start_export_thread(input_file, format, resolution, video_bitrate, audio_bitrate, quality, export_button, back_button, progress_bar, progress_var, progress_label, custom_width, custom_height, keep_metadata, start_time, end_time, quick_trim, root):
     # 隐藏导出按钮，显示进度条和进度标签
