@@ -84,10 +84,10 @@ def export_file(input_file, format, resolution, video_bitrate, audio_bitrate, qu
             command.extend(['-c:v', codec])
         if resolution:
             command.extend(['-s', resolution])
-        if video_bitrate != 'kbps' and video_bitrate != '':
-            command.extend(['-b:v', video_bitrate])
-        if audio_bitrate != 'kbps' and audio_bitrate != '':
-            command.extend(['-b:a', audio_bitrate])
+        if video_bitrate and video_bitrate != 'kbps':
+            command.extend(['-b:v', f'{video_bitrate}k'])
+        if audio_bitrate and audio_bitrate != 'kbps':
+            command.extend(['-b:a', f'{audio_bitrate}k'])
         if quality:
             command.extend(['-crf', str(quality)])
         if start_time and end_time:

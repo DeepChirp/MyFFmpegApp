@@ -81,6 +81,9 @@ def start_ffmpeg_download():
     root.mainloop()
 
 def run_ffmpeg_command_with_progress(command, progress_var, progress_bar, progress_label, root, start_time=None, total_duration=None):
+
+    # 输出执行的命令
+    print("Executing command:", " ".join(command))
     try:
         # 重置进度条和进度变量
         progress_var.set("进度: 0%")
