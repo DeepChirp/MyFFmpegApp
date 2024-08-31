@@ -349,7 +349,7 @@ def export_audio_window(file_paths):
         # 进度条
         progress_var = StringVar()
         progress_var.set("进度: 0%")
-        progress_label = ttk.Label(root, textvariable=progress_var)
+        progress_label = Label(root, textvariable=progress_var)
         progress_label.grid(row=4, column=0, columnspan=3, pady=5, sticky="ew")
         progress_label.grid_remove()  # 初始隐藏进度标签
         progress_bar = ttk.Progressbar(root, orient="horizontal", length=200, mode="determinate")
@@ -455,7 +455,7 @@ def trim_media_window(file_paths):
         # 进度条
         progress_var = StringVar()
         progress_var.set("进度: 0%")
-        progress_label = ttk.Label(root, textvariable=progress_var)
+        progress_label = Label(root, textvariable=progress_var)
         progress_label.grid(row=4, column=0, columnspan=3, pady=5, sticky="ew")
         progress_label.grid_remove()  # 初始隐藏进度标签
         progress_bar = ttk.Progressbar(root, orient="horizontal", length=200, mode="determinate")
