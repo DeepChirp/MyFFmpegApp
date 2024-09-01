@@ -141,7 +141,7 @@ def show_ffmpeg_info():
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     messagebox.showinfo("FFmpeg信息", result.stdout)
 
-def generate_command(input_file, format, resolution, video_bitrate, audio_bitrate, quality, custom_width, custom_height, keep_metadata, start_time, end_time, quick_trim):
+def generate_command(input_file, format, resolution, video_bitrate, audio_bitrate, quality, custom_width, custom_height, rotate, keep_metadata, start_time, end_time, quick_trim):
     # 获取输入文件的扩展名
     input_format = os.path.splitext(input_file)[1][1:]
 
@@ -188,6 +188,18 @@ def generate_command(input_file, format, resolution, video_bitrate, audio_bitrat
             command.extend(['-b:a', f'{audio_bitrate}k'])
         if quality:
             command.extend(['-crf', str(quality)])
+        if rotate != '不旋转':
+            if rotate == '顺时针旋转90°':
+                command.extend(['-vf', 'transpose=1'])
+            elif rotate == '逆时针旋转90°':
+                command.extend(['-vf', 'transpose=2'])
+            elif rotate == '旋转180°':
+                command.extend(['-vf', 'transpose=2,transpose=2'])
+            elif rotate == '水平翻转':
+                command.extend(['-vf', 'hflip'])
+            elif rotate == '垂直翻转':
+                command.extend(['-vf', 'vflip'])
+
         if start_time and end_time:
             command.extend(['-ss', start_time, '-to', end_time])
             if quick_trim:
