@@ -3,7 +3,7 @@ import os
 import requests
 import zipfile
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import threading
 import re
 from utils import convert_time_to_seconds
@@ -80,10 +80,13 @@ def start_ffmpeg_download():
 
     root.mainloop()
 
-def run_ffmpeg_command_with_progress(command, progress_var, progress_bar, progress_label, root, start_time=None, total_duration=None):
-
+def run_ffmpeg_command_with_progress(command, progress_var, progress_bar, progress_label, root, total_duration=None):
     # 输出执行的命令
-    print("Executing command:", " ".join(command))
+    command_with_quotes = [
+        f'"{arg}"' if ' ' in arg else arg for arg in command
+    ]
+    print("Executing command:", " ".join(command_with_quotes))
+
     try:
         # 重置进度条和进度变量
         progress_var.set("进度: 0%")
@@ -137,3 +140,60 @@ def show_ffmpeg_info():
     command = ['ffmpeg', '-version']
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     messagebox.showinfo("FFmpeg信息", result.stdout)
+
+def generate_command(input_file, format, resolution, video_bitrate, audio_bitrate, quality, custom_width, custom_height, keep_metadata, start_time, end_time, quick_trim):
+    # 获取输入文件的扩展名
+    input_format = os.path.splitext(input_file)[1][1:]
+
+    # 处理“原格式”选项
+    if format.startswith("原格式"):
+        format = input_format
+
+    # 处理编码器选项
+    codec = None
+    if format == "mp4 (h264)":
+        format = "mp4"
+        codec = "libx264"
+    elif format == "mp4 (h265)":
+        format = "mp4"
+        codec = "libx265"
+
+    # 处理自定义分辨率
+    if resolution == "与原视频相同":
+        resolution = None
+    elif resolution == "自定义":
+        resolution = f"{custom_width}x{custom_height}"
+
+    output_file = filedialog.asksaveasfilename(
+        title="保存文件",
+        defaultextension=f".{format}",
+        filetypes=[(f"{format.upper()} 文件", f"*.{format}"), ("所有文件", "*.*")]
+    )
+    if output_file:
+        command = [
+            'ffmpeg', '-y', '-i', input_file,
+            '-map_metadata', '0' if keep_metadata else '-1'
+        ]
+
+        if keep_metadata and input_format == "mov":
+            command.extend(['-movflags', 'use_metadata_tags'])
+
+        if codec:
+            command.extend(['-c:v', codec])
+        if resolution:
+            command.extend(['-s', resolution])
+        if video_bitrate and video_bitrate != 'kbps':
+            command.extend(['-b:v', f'{video_bitrate}k'])
+        if audio_bitrate and audio_bitrate != 'kbps':
+            command.extend(['-b:a', f'{audio_bitrate}k'])
+        if quality:
+            command.extend(['-crf', str(quality)])
+        if start_time and end_time:
+            command.extend(['-ss', start_time, '-to', end_time])
+            if quick_trim:
+                command.extend(['-c:v', 'copy', '-c:a', 'copy'])
+
+        command.append(output_file)
+
+        return command
+    return None

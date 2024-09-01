@@ -3,8 +3,8 @@ import threading
 import tkinter as tk
 import json
 from tkinter import ttk, StringVar, Label, IntVar, Frame, messagebox, filedialog, BooleanVar, Toplevel, Canvas, Menu
-from file_operations import import_files, export_file
-from ffmpeg_utils import show_ffmpeg_info, run_ffmpeg_command_with_progress
+from file_operations import import_files
+from ffmpeg_utils import show_ffmpeg_info, run_ffmpeg_command_with_progress, generate_command
 from utils import get_media_duration, get_aspect_ratio, convert_time_to_seconds, convert_seconds_to_time
 
 # 全局变量 root
@@ -280,7 +280,7 @@ def export_video_window(file_paths):
         back_button = ttk.Button(button_frame, text="返回", command=show_main_window)
         back_button.grid(row=0, column=0, padx=5)
 
-        export_button = ttk.Button(button_frame, text="导出", command=lambda: start_export_thread(input_file, format_var.get(), resolution_var.get(), video_bitrate_var.get(), audio_bitrate_var.get(), 51 - quality_var.get(), export_button, back_button, progress_bar, progress_var, progress_label, custom_width_var.get(), custom_height_var.get(), metadata_var.get(), None, None, False, root))
+        export_button = ttk.Button(button_frame, text="导出", command=lambda: start_export_thread(generate_command(input_file, format_var.get(), resolution_var.get(), video_bitrate_var.get(), audio_bitrate_var.get(), 51 - quality_var.get(), custom_width_var.get(), custom_height_var.get(), metadata_var.get(), None, None, False), export_button, back_button, progress_bar, progress_var, progress_label, root))
         export_button.grid(row=0, column=1, padx=5)
 
         # 进度条
@@ -343,7 +343,7 @@ def export_audio_window(file_paths):
         back_button = ttk.Button(button_frame, text="返回", command=show_main_window)
         back_button.grid(row=0, column=0, padx=5)
 
-        export_button = ttk.Button(button_frame, text="导出", command=lambda: start_export_thread(input_file, format_var.get(), None, None, audio_bitrate_var.get(), None, export_button, back_button, progress_bar, progress_var, progress_label, None, None, metadata_var.get(), None, None, False, root))
+        export_button = ttk.Button(button_frame, text="导出", command=lambda: start_export_thread(generate_command(input_file, format_var.get(), None, None, audio_bitrate_var.get(), None, None, None, metadata_var.get(), None, None, None), export_button, back_button, progress_bar, progress_var, progress_label, root))
         export_button.grid(row=0, column=1, padx=5)
 
         # 进度条
@@ -449,7 +449,7 @@ def trim_media_window(file_paths):
         back_button = ttk.Button(button_frame, text="返回", command=show_main_window)
         back_button.grid(row=0, column=0, padx=5)
 
-        export_button = ttk.Button(button_frame, text="导出", command=lambda: start_export_thread(input_file, "不转换", None, None, None, None, export_button, back_button, progress_bar, progress_var, progress_label, None, None, quick_trim_var.get(), start_time_var.get(), end_time_var.get(), quick_trim_var.get(), root))
+        export_button = ttk.Button(button_frame, text="导出", command=lambda: start_export_thread(generate_command(input_file, "原格式", None, None, None, None, None, None, quick_trim_var.get(), start_time_var.get(), end_time_var.get(), quick_trim_var.get()), export_button, back_button, progress_bar, progress_var, progress_label, root, convert_seconds_to_time(convert_time_to_seconds(end_time_var.get()) - convert_time_to_seconds(start_time_var.get()))))
         export_button.grid(row=0, column=1, padx=5)
 
         # 进度条
@@ -497,8 +497,9 @@ def show_preset_window():
     for col in columns:
         tree.heading(col, text=col)
     for preset in presets:
+        command_str = ' '.join(preset["command"])  # 将命令列表转换为字符串
         output_type_display = "与导入格式相同" if preset["output_type"] == "keep" else preset["output_type"]
-        tree.insert("", "end", iid=preset["key"], values=(preset["command"], preset["description"], output_type_display))
+        tree.insert("", "end", iid=preset["key"], values=(command_str, preset["description"], output_type_display))
     tree.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
 
     # 添加、修改、删除按钮
@@ -550,8 +551,9 @@ def show_preset_window():
         # 重新加载 Treeview
         tree.delete(*tree.get_children())
         for preset in presets:
+            command_str = ' '.join(preset["command"])  # 将命令列表转换为字符串
             output_type_display = "与导入格式相同" if preset["output_type"] == "keep" else preset["output_type"]
-            tree.insert("", "end", iid=preset["key"], values=(preset["command"], preset["description"], output_type_display))
+            tree.insert("", "end", iid=preset["key"], values=(command_str, preset["description"], output_type_display))
 
     def add_preset(preset_window, tree, presets, preset_file):
         def save_preset():
@@ -561,7 +563,7 @@ def show_preset_window():
 
             new_preset = {
                 "key": max(preset["key"] for preset in presets) + 1 if presets else 1,
-                "command": command_var.get(),
+                "command": command_var.get().split(),  # 将命令字符串转换为列表
                 "description": description_var.get(),
                 "output_type": updated_output_type
             }
@@ -569,8 +571,9 @@ def show_preset_window():
             with open(preset_file, 'w', encoding='utf-8') as f:
                 json.dump(presets, f, ensure_ascii=False, indent=4)
 
+            command_str = ' '.join(new_preset["command"])  # 将命令列表转换为字符串
             output_type_display = "与导入格式相同" if new_preset["output_type"] == "keep" else new_preset["output_type"]
-            tree.insert("", "end", iid=new_preset["key"], values=(new_preset["command"], new_preset["description"], output_type_display))
+            tree.insert("", "end", iid=new_preset["key"], values=(command_str, new_preset["description"], output_type_display))
             add_window.destroy()
 
         add_window = Toplevel(preset_window)
@@ -606,7 +609,7 @@ def show_preset_window():
 
             updated_preset = {
                 "key": int(selected_item),
-                "command": command_var.get(),
+                "command": command_var.get().split(),  # 将命令字符串转换为列表
                 "description": description_var.get(),
                 "output_type": updated_output_type
             }
@@ -617,16 +620,16 @@ def show_preset_window():
             with open(preset_file, 'w', encoding='utf-8') as f:
                 json.dump(presets, f, ensure_ascii=False, indent=4)
 
-            # 删除旧项并插入新项
-            tree.delete(selected_item)
+            # 更新 Treeview 中的项，而不是删除旧项并插入新项
+            command_str = ' '.join(updated_preset["command"])  # 将命令列表转换为字符串
             output_type_display = "与导入格式相同" if updated_preset["output_type"] == "keep" else updated_preset["output_type"]
-            tree.insert("", "end", iid=updated_preset["key"], values=(updated_preset["command"], updated_preset["description"], output_type_display))
+            tree.item(selected_item, values=(command_str, updated_preset["description"], output_type_display))
             edit_window.destroy()
 
         edit_window = Toplevel(preset_window)
         edit_window.title("修改预设")
 
-        command_var = StringVar(value=selected_preset[0])
+        command_var = StringVar(value=' '.join(selected_preset[0].split()))  # 将命令字符串转换为列表再转换为字符串
         description_var = StringVar(value=selected_preset[1])
         output_type_display = "与导入格式相同" if selected_preset[2] == "keep" else selected_preset[2]
         output_type_var = StringVar(value=output_type_display)
@@ -668,33 +671,30 @@ def show_preset_window():
         # 重新加载 Treeview
         tree.delete(*tree.get_children())
         for preset in presets:
+            command_str = ' '.join(preset["command"])  # 将命令列表转换为字符串
             output_type_display = "与导入格式相同" if preset["output_type"] == "keep" else preset["output_type"]
-            tree.insert("", "end", iid=preset["key"], values=(preset["command"], preset["description"], output_type_display))
+            tree.insert("", "end", iid=preset["key"], values=(command_str, preset["description"], output_type_display))
 
     def run_preset(tree):
         selected_item = tree.selection()[0]
         selected_preset = tree.item(selected_item, "values")
 
         # 调整索引，假设 key 列不可见
-        command = selected_preset[0]
+        command = selected_preset[0].split()  # 将命令字符串转换为列表
         output_type = selected_preset[2]
 
         # 解析命令中的文件类型
         file_types = []
         placeholders = ["[视频]", "[音频]", "[媒体]", "[字幕]"]
         for placeholder in placeholders:
-            start = 0
-            while True:
-                start = command.find(placeholder, start)
-                if start == -1:
-                    break
-                file_types.append(placeholder.strip("[]"))
-                start += len(placeholder)
+            for cmd in command:
+                if placeholder in cmd:
+                    file_types.append(placeholder.strip("[]"))
 
         def execute_command(file_paths, command):
             # 替换命令中的文件占位符
             for i, file_path in enumerate(file_paths):
-                command = command.replace(f"[{file_types[i]}]", file_path, 1)
+                command = [cmd.replace(f"[{file_types[i]}]", file_path, 1) for cmd in command]
 
             # 如果 output_type 是 keep，则使用输入文件的扩展名
             if output_type == "keep":
@@ -710,7 +710,7 @@ def show_preset_window():
                 filetypes=[(f"{output_extension.upper()} 文件", f"*{output_extension}"), ("所有文件", "*.*")]
             )
             if output_file:
-                command = command.replace("[输出]", output_file)
+                command = [cmd.replace("[输出]", output_file) for cmd in command]
 
                 # 创建新窗口
                 progress_window = Toplevel(root)
@@ -724,7 +724,7 @@ def show_preset_window():
                 progress_label.grid(pady=5)
 
                 def run_and_update():
-                    result = run_ffmpeg_command_with_progress(command.split(), progress_var, progress_bar, progress_label, progress_window, None, None)
+                    result = run_ffmpeg_command_with_progress(command, progress_var, progress_bar, progress_label, progress_window, None)
                     messagebox.showinfo("结果", f"完成，返回码: {result}")
                     progress_window.destroy()
 
@@ -734,7 +734,10 @@ def show_preset_window():
 
         import_files(len(file_types), file_types, lambda file_paths: execute_command(file_paths, command))
 
-def start_export_thread(input_file, format, resolution, video_bitrate, audio_bitrate, quality, export_button, back_button, progress_bar, progress_var, progress_label, custom_width, custom_height, keep_metadata, start_time, end_time, quick_trim, root):
+def start_export_thread(command, export_button, back_button, progress_bar, progress_var, progress_label, root, total_duration=None):
+    if not command:
+        return
+
     # 隐藏导出按钮，显示进度条和进度标签
     export_button.grid_remove()
     back_button.grid_remove()
@@ -743,7 +746,12 @@ def start_export_thread(input_file, format, resolution, video_bitrate, audio_bit
     progress_var.set("进度: 0%")
 
     def export_and_update():
-        export_file(input_file, format, resolution, video_bitrate, audio_bitrate, quality, progress_bar, progress_var, progress_label, custom_width, custom_height, keep_metadata, start_time, end_time, quick_trim, root)
+        # 运行FFmpeg命令并显示进度
+        result = run_ffmpeg_command_with_progress(command, progress_var, progress_bar, progress_label, root, total_duration)
+
+        # 显示导出结果
+        messagebox.showinfo("导出结果", f"完成，返回码: {result}")
+
         # 显示导出按钮，隐藏进度条和进度标签
         root.after(0, export_button.grid)
         root.after(0, back_button.grid)
