@@ -277,6 +277,8 @@ def export_video_window(file_paths):
         rotate_menu.config(width=15)  # 设置下拉框宽度
         rotate_menu.grid(row=6, column=1, padx=5, pady=5, sticky="w")
 
+        # TODO: 添加无损旋转选项，仅修改旋转播放信息而不重新编码
+
         # 保留元数据复选框
         metadata_var = BooleanVar()
         metadata_var.set(True)
