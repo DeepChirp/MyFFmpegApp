@@ -2,6 +2,7 @@ from tkinter import *
 from ffmpeg_utils import check_ffmpeg, start_ffmpeg_download
 from gui import show_main_window, set_root
 
+
 def main():
     if not check_ffmpeg():
         start_ffmpeg_download()  # 下载FFmpeg
@@ -13,6 +14,7 @@ def main():
     set_root(root)  # 设置GUI的根窗口
     show_main_window()  # 调用主窗口显示函数
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()

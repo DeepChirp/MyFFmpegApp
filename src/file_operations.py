@@ -1,5 +1,6 @@
 from tkinter import filedialog, messagebox
 
+
 def import_files(file_count, file_types, command):
     """
     导入指定数量的文件，并执行指定的命令。
@@ -12,8 +13,13 @@ def import_files(file_count, file_types, command):
     extensions = {
         "视频": [("视频文件", "*.mp4;*.avi;*.mkv;*.mov;*.flv;*.ogg;*.webm")],
         "音频": [("音频文件", "*.mp3;*.aac;*.wav;*.flac;*.ogg;*.m4a")],
-        "媒体": [("媒体文件", "*.mp4;*.avi;*.mkv;*.mov;*.flv;*.ogg;*.webm;*.mp3;*.aac;*.wav;*.flac;*.m4a")],
-        "字幕": [("字幕文件", "*.srt;*.ssa;*.sub;*.pgs")]
+        "媒体": [
+            (
+                "媒体文件",
+                "*.mp4;*.avi;*.mkv;*.mov;*.flv;*.ogg;*.webm;*.mp3;*.aac;*.wav;*.flac;*.m4a",
+            )
+        ],
+        "字幕": [("字幕文件", "*.srt;*.ssa;*.sub;*.pgs")],
     }
 
     file_paths = []
@@ -25,7 +31,7 @@ def import_files(file_count, file_types, command):
 
         file_path = filedialog.askopenfilename(
             title=f"选择{file_type}文件",
-            filetypes=extensions[file_type] + [("所有文件", "*.*")]
+            filetypes=extensions[file_type] + [("所有文件", "*.*")],
         )
         if file_path:
             file_paths.append(file_path)
